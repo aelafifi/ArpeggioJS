@@ -1,16 +1,12 @@
 import { GrammarDef, RefinerFn } from "../types";
 import { SUPPRESS } from "./index";
 
-export class Cascade<T> {
-  constructor(readonly value: T) {}
-}
-
 export interface ParsingExpressionOptions {
   ruleName?: string;
   refiner?: RefinerFn | typeof SUPPRESS | number | number[];
 
-  skipws?: string | Cascade<string>;
-  eolterm?: boolean | Cascade<boolean>;
+  skipws?: string;
+  eolterm?: boolean;
   ignoreCase?: boolean;
 }
 

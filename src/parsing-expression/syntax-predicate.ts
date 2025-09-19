@@ -14,8 +14,8 @@ export abstract class SyntaxPredicate extends ParsingExpression {
 
   _doParsing(parser: Parser): PTNode {
     const first_c_pos = parser.position;
-    CommentsParser.parseComments(parser, this);
-    WhitespaceSkipper.skipWhitespaces(parser, this);
+    CommentsParser.parseComments(parser);
+    WhitespaceSkipper.skipWhitespaces(parser);
     const c_pos = parser.position;
 
     try {

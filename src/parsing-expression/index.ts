@@ -7,7 +7,7 @@ import {
 } from "../parser";
 import { NoMatch } from "../errors";
 import { NonTerminal, PTNode } from "../parset-tree";
-import { Cascade, ParseManyOptions, ParsingExpressionOptions } from "./options";
+import { ParseManyOptions, ParsingExpressionOptions } from "./options";
 import { IGNORE, withProps } from "prop-scope";
 
 export const SUPPRESS: unique symbol = Symbol("__suppress__");
@@ -114,8 +114,8 @@ export abstract class ParsingExpression {
   }
 
   _doParsing(parser: Parser): PTNode {
-    const comments = CommentsParser.parseComments(parser, this);
-    const whitespaces = WhitespaceSkipper.skipWhitespaces(parser, this);
+    const comments = CommentsParser.parseComments(parser);
+    const whitespaces = WhitespaceSkipper.skipWhitespaces(parser);
     const c_pos = parser.position;
 
     if (!parser.in_parse_comments) {
@@ -127,18 +127,9 @@ export abstract class ParsingExpression {
     let result = withProps(
       parser as any, // TODO: fix typing on the prop-scope package
       {
-        skipws:
-          this.options.skipws instanceof Cascade
-            ? this.options.skipws.value
-            : IGNORE,
-        eolterm:
-          this.options.eolterm instanceof Cascade
-            ? this.options.eolterm.value
-            : IGNORE,
-        ignoreCase:
-          this.options.ignoreCase !== undefined && !parser.in_match
-            ? this.options.ignoreCase
-            : IGNORE,
+        skipws: this.options.skipws ?? IGNORE,
+        eolterm: this.options.eolterm ?? IGNORE,
+        ignoreCase: this.options.ignoreCase ?? IGNORE,
       },
       () => this._parse(parser),
     );

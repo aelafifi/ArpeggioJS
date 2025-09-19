@@ -12,28 +12,13 @@ import { DEFAULT_KEYWORD_REGEX, DEFAULT_WS, GrammarDef } from "./types";
 import { bisectLeft } from "./utils";
 import { GrammarError, NoMatch } from "./errors";
 import { PTNode } from "./parset-tree";
-import { Cascade } from "./parsing-expression/options";
+import { withProps } from "prop-scope";
 
 export class WhitespaceSkipper {
-  static getSkipWS(parser: Parser, expr: any): string {
-    const exprSkipWS =
-      expr.options.skipws instanceof Cascade ? undefined : expr.options.skipws;
-    const skipws = exprSkipWS ?? parser.skipws ?? DEFAULT_WS;
-    return WhitespaceSkipper.getEOLTerm(parser, expr)
-      ? skipws.replace(/[\r\n]/g, "")
-      : skipws;
-  }
-
-  static getEOLTerm(parser: Parser, expr: any): boolean {
-    const exprEOLTerm =
-      expr.options.eolterm instanceof Cascade
-        ? undefined
-        : expr.options.eolterm;
-    return exprEOLTerm ?? parser.eolterm ?? false;
-  }
-
-  static skipWhitespaces(parser: Parser, rule: any): string {
-    const skipws = WhitespaceSkipper.getSkipWS(parser, rule);
+  static skipWhitespaces(parser: Parser): string {
+    const skipws = parser.eolterm
+      ? parser.skipws.replace(/[\r\n]/g, "")
+      : parser.skipws;
     let whitespaces = "";
 
     if (!skipws || parser.in_lex_rule) {
@@ -53,7 +38,7 @@ export class WhitespaceSkipper {
 }
 
 export class CommentsParser {
-  static parseComments(parser: Parser, expr: any): PTNode[] {
+  static parseComments(parser: Parser): PTNode[] {
     if (
       parser.in_lex_rule ||
       parser.in_parse_comments ||
@@ -62,25 +47,24 @@ export class CommentsParser {
       return [];
     }
 
-    const comments: PTNode[] = [];
-    try {
-      parser.in_parse_comments = true;
+    return withProps(parser as any, { in_parse_comments: true }, () => {
+      const comments: PTNode[] = [];
+
       try {
         // eslint-disable-next-line no-constant-condition
         while (true) {
-          comments.push(parser.getRule(parser.commentsModel).parse(parser));
+          comments.push(parser.getRule(parser.commentsModel!).parse(parser));
         }
       } catch (e) {
         if (e instanceof NoMatch) {
-          // NoMatch in comment matching is perfectly legal and no action should be taken.
+          // NoMatch in comment matching is perfectly legal, and no action should be taken.
         } else {
           throw e;
         }
       }
-    } finally {
-      parser.in_parse_comments = false;
-    }
-    return comments;
+
+      return comments;
+    });
   }
 }
 
@@ -171,21 +155,23 @@ export class Parser {
   _noMatch?: NoMatch;
 
   // Cache
-  resultCacheHits: number = 0;
-  resultCacheMisses: number = 0;
+  // Result cache: [ParsingExpression, position] => [PTNode | null, newPosition]
   _resultCache: Map<[ParsingExpression, number], [PTNode | null, number]> =
     new Map();
+  resultCacheHits: number = 0;
+  resultCacheMisses: number = 0;
 
+  // Rule cache: GrammarDef => ParsingExpression
+  _ruleCache: Map<GrammarDef, ParsingExpression> = new Map();
   ruleCacheHits: number = 0;
   ruleCacheMisses: number = 0;
-  _ruleCache: Map<expr, ParsingExpression> = new Map();
 
   // Options
   commentsModel?: GrammarDef;
   autokwd: boolean;
   ignoreCase?: boolean;
-  skipws?: string;
-  eolterm?: boolean;
+  skipws: string;
+  eolterm: boolean;
 
   // For debugging
   _debug: boolean;
@@ -198,8 +184,8 @@ export class Parser {
     readonly options: ParserOptions = {},
   ) {
     this._debug = options.debug ?? false;
-    this.skipws = options.skipws;
-    this.eolterm = options.eolterm;
+    this.skipws = options.skipws ?? DEFAULT_WS;
+    this.eolterm = options.eolterm ?? false;
     this.commentsModel = options.commentsModel;
     this.autokwd = options.autokwd ?? true;
     this.ignoreCase = options.ignoreCase;
@@ -210,6 +196,7 @@ export class Parser {
     parseModel: GrammarDef,
     options?: ParserOptions,
   ): PTNode {
+    // TODO: Could we make the Parser instance reusable for multiple parse calls?
     const parser = new Parser(input, options ?? {});
     let pt_node: PTNode;
     try {
@@ -247,12 +234,18 @@ export class Parser {
 
   noMatch(rule: ParsingExpression, position?: number) {
     position ??= this.position;
+
+    // We only keep the farthest noMatch, unless we are in comment parsing mode.
     if (this._noMatch === undefined || !this.in_parse_comments) {
+      // If we are in a not expression, we use a special marker rule to indicate that.
       if (this._noMatch === undefined || position > this._noMatch.position) {
         this._noMatch = this.in_not
           ? new NoMatch([this.FIRST_NOT], position, this)
           : new NoMatch([rule], position, this);
-      } else if (
+      }
+
+      // If we are at the same position as the current noMatch, we add the rule to the list of rules.
+      else if (
         position == this._noMatch.position &&
         rule instanceof Match &&
         !this.in_not
@@ -265,13 +258,17 @@ export class Parser {
       }
     }
 
+    // Otherwise, return the current noMatch as it's the farthest one.
     return this._noMatch;
   }
 
   getRule(x: GrammarDef): ParsingExpression {
     if (this._ruleCache.has(x)) {
       this.ruleCacheHits++;
-      return this._ruleCache.get(x)!;
+      const cachedRule = this._ruleCache.get(x);
+      if (cachedRule instanceof ParsingExpression) {
+        return cachedRule;
+      }
     }
     const rule = this._getRule(x);
     this.ruleCacheMisses++;
@@ -281,6 +278,7 @@ export class Parser {
 
   private _getRule(x: GrammarDef): ParsingExpression {
     if (x === null) {
+      // If x is null or undefined, it means it should match nothing (epsilon).
       return new Empty();
     }
 
@@ -289,14 +287,20 @@ export class Parser {
     }
 
     if (typeof x === "string" || x instanceof String) {
+      // If x is a string, it means it should match that exact string.
       const s = "" + x;
+
+      // If autokwd is enabled and the string matches the keyword regex, treat it as a keyword.
       if (this.autokwd && DEFAULT_KEYWORD_REGEX.test(s)) {
         return new Keyword(s);
       }
+
+      // Otherwise, treat it as a simple string match.
       return new StringMatch(s);
     }
 
     if (x instanceof RegExp) {
+      // If x is a RegExp, it means it should match that regex.
       return new RegexMatch(x);
     }
 
@@ -308,6 +312,8 @@ export class Parser {
     }
 
     if (typeof x === "function") {
+      // If x is a function, it means it should be treated as a rule reference.
+      // TODO: Use CrossRef instead of Expression here?
       const result = this.getRule(x());
       result.ruleName ||= x.name;
       return result;
