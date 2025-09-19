@@ -1,11 +1,11 @@
-import { ParsingExpression, SUPPRESS } from "../parsing-expression";
+import { Match, SUPPRESS } from "../parsing-expression";
 
 import { PTNode } from "./PTNode";
 import { getRefinerFunction } from "./utils";
 
 export class Terminal extends PTNode {
   constructor(
-    rule: ParsingExpression,
+    rule: Match,
     public value: string,
     range: [number, number],
     pres: {
