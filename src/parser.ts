@@ -312,10 +312,15 @@ export class Parser {
     }
 
     if (typeof x === "function") {
-      // If x is a function, it means it should be treated as a rule reference.
       // TODO: Use CrossRef instead of Expression here?
-      const result = this.getRule(x());
-      result.ruleName ||= x.name;
+      // If x is a function, it means it should be treated as a rule reference.
+      const ruleName = x.name;
+      let expr: GrammarDef = x;
+      while (typeof expr === "function") {
+        expr = expr();
+      }
+      const result = this.getRule(expr);
+      result.ruleName ||= ruleName;
       return result;
     }
 
