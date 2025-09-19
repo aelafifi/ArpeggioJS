@@ -1,4 +1,4 @@
-import { expr, RefinerFn } from "../types";
+import { GrammarDef, RefinerFn } from "../types";
 import { SUPPRESS } from "./index";
 
 export class Cascade<T> {
@@ -15,6 +15,6 @@ export interface ParsingExpressionOptions {
 }
 
 // Shouldn't apply for classes with autoReduce=true
-export type ParseManyOptions = ParsingExpressionOptions & { sep?: expr };
+export type ParseManyOptions = ParsingExpressionOptions & { sep?: GrammarDef };
 
 export type MatchOptions = Omit<ParsingExpressionOptions, "skipws" | "eolterm">;

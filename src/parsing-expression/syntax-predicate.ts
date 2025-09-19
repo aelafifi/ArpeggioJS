@@ -1,12 +1,12 @@
 import type { Parser } from "../parser";
 import { CommentsParser, WhitespaceSkipper } from "../parser";
 import { NoMatch } from "../errors";
-import { expr } from "../types";
+import { GrammarDef } from "../types";
 import { ParsingExpression, SUPPRESS } from "./index";
 import { NonTerminal, PTNode } from "../parset-tree";
 
 export abstract class SyntaxPredicate extends ParsingExpression {
-  constructor(readonly element: expr) {
+  constructor(readonly element: GrammarDef) {
     super([], {
       refiner: SUPPRESS,
     });

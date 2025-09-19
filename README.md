@@ -25,7 +25,7 @@ abstract class ParsingExpression {
     readonly autoReduce: boolean = false;
 
     constructor(
-        readonly elements: expr[],
+        readonly elements: GrammarDef[],
         readonly options: ParsingExpressionOptions = {}
     ) {
         //

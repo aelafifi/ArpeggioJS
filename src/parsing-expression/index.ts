@@ -1,4 +1,4 @@
-import { expr, RefinerFn } from "../types";
+import { GrammarDef, RefinerFn } from "../types";
 import {
   CommentsParser,
   Parser,
@@ -27,7 +27,7 @@ export abstract class ParsingExpression {
   refiner?: RefinerFn | typeof SUPPRESS | number | number[];
 
   constructor(
-    readonly elements: expr[],
+    readonly elements: GrammarDef[],
     readonly options: ParsingExpressionOptions = {},
   ) {
     this.ruleName = options.ruleName ?? "";
@@ -163,7 +163,7 @@ export class Expression extends ParsingExpression {
   readonly shouldReduce = true;
 
   constructor(
-    readonly element: expr,
+    readonly element: GrammarDef,
     readonly options: ParsingExpressionOptions = {},
   ) {
     super([element], options);
@@ -178,7 +178,7 @@ export class LexRule extends ParsingExpression {
   readonly shouldReduce = true;
 
   constructor(
-    readonly element: expr,
+    readonly element: GrammarDef,
     options: ParsingExpressionOptions = {},
   ) {
     super([element], options);
@@ -199,7 +199,7 @@ export class Sequence extends ParsingExpression {
   readonly couldReduce = true;
 
   constructor(
-    elements: expr[],
+    elements: GrammarDef[],
     readonly options: ParseManyOptions = {},
   ) {
     super(elements, options);
@@ -240,7 +240,7 @@ export class LexSequence extends Sequence {
 }
 
 export class Partial extends Sequence {
-  constructor(elements: expr[], options: ParseManyOptions = {}) {
+  constructor(elements: GrammarDef[], options: ParseManyOptions = {}) {
     super(elements, options);
   }
 
@@ -272,7 +272,7 @@ export class Choice extends ParsingExpression {
   readonly shouldReduce = true;
   readonly couldReduce = true;
 
-  constructor(elements: expr[], options: ParsingExpressionOptions = {}) {
+  constructor(elements: GrammarDef[], options: ParsingExpressionOptions = {}) {
     super(elements, options);
   }
 
@@ -298,7 +298,7 @@ export class Choice extends ParsingExpression {
 export class UnorderedGroup extends Sequence {
   readonly couldReduce = true;
 
-  constructor(elements: expr[], options: ParseManyOptions = {}) {
+  constructor(elements: GrammarDef[], options: ParseManyOptions = {}) {
     super(elements, options);
   }
 

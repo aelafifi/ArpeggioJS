@@ -13,7 +13,7 @@ import {
 } from "../parsing-expression";
 import { Parser } from "../parser";
 import { PTVisitor } from "../parset-tree/PTVisitor";
-import { expr } from "../types";
+import { GrammarDef } from "../types";
 import { PTNode } from "../parset-tree";
 import { OneOrMore, ZeroOrMore } from "../parsing-expression/repetition";
 
@@ -90,10 +90,10 @@ export type PEGObject = Record<
 export const Str = (str: string) => new StringMatch(str);
 
 function parsePEGObject(obj: PEGObject): any {
-  const rules: Record<string, expr> = {};
+  const rules: Record<string, GrammarDef> = {};
   const ruleRefGetter = (rule_name: string) => () => rules[rule_name];
 
-  const _parse = (value: string, rule: expr) => {
+  const _parse = (value: string, rule: GrammarDef) => {
     const pTree = Parser.parse(value, rule);
     return new PTVisitor(pTree, {
       afterRuleName(node: PTNode, value: string) {

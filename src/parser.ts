@@ -8,7 +8,7 @@ import {
   Sequence,
   StringMatch,
 } from "./parsing-expression";
-import { DEFAULT_KEYWORD_REGEX, DEFAULT_WS, expr } from "./types";
+import { DEFAULT_KEYWORD_REGEX, DEFAULT_WS, GrammarDef } from "./types";
 import { bisectLeft } from "./utils";
 import { GrammarError, NoMatch } from "./errors";
 import { PTNode } from "./parset-tree";
@@ -150,7 +150,7 @@ export interface ParserOptions {
   ignoreCase?: boolean;
   skipws?: string;
   eolterm?: boolean;
-  commentsModel?: expr;
+  commentsModel?: GrammarDef;
   autokwd?: boolean;
 }
 
@@ -181,7 +181,7 @@ export class Parser {
   _ruleCache: Map<expr, ParsingExpression> = new Map();
 
   // Options
-  commentsModel?: expr;
+  commentsModel?: GrammarDef;
   autokwd: boolean;
   ignoreCase?: boolean;
   skipws?: string;
@@ -207,7 +207,7 @@ export class Parser {
 
   static parse(
     input: string,
-    parseModel: expr,
+    parseModel: GrammarDef,
     options?: ParserOptions,
   ): PTNode {
     const parser = new Parser(input, options ?? {});
@@ -268,7 +268,7 @@ export class Parser {
     return this._noMatch;
   }
 
-  getRule(x: expr): ParsingExpression {
+  getRule(x: GrammarDef): ParsingExpression {
     if (this._ruleCache.has(x)) {
       this.ruleCacheHits++;
       return this._ruleCache.get(x)!;
@@ -279,7 +279,7 @@ export class Parser {
     return rule;
   }
 
-  private _getRule(x: expr): ParsingExpression {
+  private _getRule(x: GrammarDef): ParsingExpression {
     if (x === null) {
       return new Empty();
     }
