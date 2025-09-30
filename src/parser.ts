@@ -64,7 +64,6 @@ export class ParserContext {
   }
 
   parse(): Node {
-    // TODO: Could we make the Parser instance reusable for multiple parse calls?
     let pt_node: Node;
     try {
       pt_node = this.parser.getRule(this.parser.parseModel).parse(this);
