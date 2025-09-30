@@ -56,7 +56,8 @@ const program = () => [
 ];
 
 let input = "b x a b c t";
-let pTree = Parser.parse(input, program);
+const parser = new Parser(program);
+let pTree = parser.parse(input);
 // console.log(pTree.refined);
 // console.log(pTree.treeStr());
 // console.log(pTree.flatStr === input);

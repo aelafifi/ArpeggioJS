@@ -1,5 +1,5 @@
 import { GrammarDef } from "../../types";
-import type { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 import { Node, Terminal } from "../../parse-tree";
 import { REMEMBER, withProps } from "prop-scope";
 import { ParsingExpression } from "../basic/ParsingExpression";
@@ -11,13 +11,13 @@ export abstract class SyntaxPredicate extends ParsingExpression {
     });
   }
 
-  _doParsing(parser: Parser): Node {
-    return withProps(parser as any, { position: REMEMBER }, () => {
-      parser.parseComments();
-      parser.skipWhitespaces();
-      const c_pos = parser.position;
+  _doParsing(ctx: ParserContext): Node {
+    return withProps(ctx as any, { position: REMEMBER }, () => {
+      ctx.parseComments();
+      ctx.skipWhitespaces();
+      const c_pos = ctx.position;
 
-      this._parse(parser);
+      this._parse(ctx);
       return new Terminal(this, "", [c_pos, c_pos]);
       // return new NonTerminal(this, [], [c_pos, c_pos]);
     });

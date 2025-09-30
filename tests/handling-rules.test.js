@@ -1,4 +1,4 @@
-import { Parser } from "../dist/parser";
+import { Parser } from "../dist/ctx";
 import {
   Empty,
   Keyword,

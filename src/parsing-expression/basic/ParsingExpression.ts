@@ -1,6 +1,6 @@
 import { GrammarDef } from "../../types";
 import { PEOptions, VisitorFn } from "../types";
-import { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 import { Node, NonTerminal } from "../../parse-tree";
 import { NoMatch } from "../../errors";
 import { IGNORE, withProps } from "prop-scope";
@@ -28,78 +28,72 @@ export abstract class ParsingExpression {
     return this._ruleName;
   }
 
-  parse(parser: Parser): Node {
-    const c_pos = parser.position;
+  parse(ctx: ParserContext): Node {
+    const c_pos = ctx.position;
 
-    if (!parser.in_match) {
-      parser.debug(
-        `>> Matching rule ${this.name}${parser.in_rule ? " in " + parser.in_rule : ""} ${parser.atPosition()}`,
+    if (!ctx.in_match) {
+      ctx.debug(
+        `>> Matching rule ${this.name}${ctx.in_rule ? " in " + ctx.in_rule : ""} ${ctx.atPosition()}`,
         1,
       );
     }
 
-    if (parser._resultCache.has([this, parser.position])) {
-      const [result, newPosition] = parser._resultCache.get([
-        this,
-        parser.position,
-      ])!;
-      parser.position = newPosition;
-      parser.resultCacheHits++;
+    if (ctx._resultCache.has([this, ctx.position])) {
+      const [result, newPosition] = ctx._resultCache.get([this, ctx.position])!;
+      ctx.position = newPosition;
+      ctx.resultCacheHits++;
 
-      if (!parser.in_match) {
-        parser.debug(
-          `** Cache hit for [${this.name}, ${c_pos}] = '${result}' : new_pos=${StringManipulation.getLineColStr(parser)}`,
+      if (!ctx.in_match) {
+        ctx.debug(
+          `** Cache hit for [${this.name}, ${c_pos}] = '${result}' : new_pos=${StringManipulation.getLineColStr(ctx)}`,
         );
-        parser.debug(
-          `<<+ Matched rule ${this.name} ${parser.atPosition()}`,
-          -1,
-        );
+        ctx.debug(`<<+ Matched rule ${this.name} ${ctx.atPosition()}`, -1);
       }
 
       if (result === null) {
-        throw parser._noMatch;
+        throw ctx._noMatch;
       }
 
       return result;
     } else {
-      parser.resultCacheMisses++;
+      ctx.resultCacheMisses++;
     }
 
-    const c_lastParsingExpression = parser.lastParsingExpression;
-    parser.lastParsingExpression = this;
+    const c_lastParsingExpression = ctx.lastParsingExpression;
+    ctx.lastParsingExpression = this;
 
-    const c_inRule = parser.in_rule;
+    const c_inRule = ctx.in_rule;
     if (this.ruleName) {
-      parser.in_rule = this.ruleName;
+      ctx.in_rule = this.ruleName;
     }
 
     let result;
     try {
-      result = this._doParsing(parser);
+      result = this._doParsing(ctx);
     } catch (e) {
       if (e instanceof NoMatch) {
-        parser.position = c_pos;
-        parser._resultCache.set([this, c_pos], [null, parser.position]);
+        ctx.position = c_pos;
+        ctx._resultCache.set([this, c_pos], [null, ctx.position]);
       }
 
       throw e;
     } finally {
-      parser.lastParsingExpression = c_lastParsingExpression;
+      ctx.lastParsingExpression = c_lastParsingExpression;
 
-      if (!parser.in_match) {
-        parser.debug(
-          `<<${parser.position === c_pos ? "- Not matched" : "+ Matched"} rule ${this.name}${parser.in_rule ? " in " + parser.in_rule : ""} ${parser.atPosition()}`,
+      if (!ctx.in_match) {
+        ctx.debug(
+          `<<${ctx.position === c_pos ? "- Not matched" : "+ Matched"} rule ${this.name}${ctx.in_rule ? " in " + ctx.in_rule : ""} ${ctx.atPosition()}`,
           -1,
         );
       }
 
-      parser.in_rule = c_inRule;
+      ctx.in_rule = c_inRule;
     }
 
     return result;
   }
 
-  _doParsing(parser: Parser): Node {
+  _doParsing(parser: ParserContext): Node {
     const init_pos = parser.position;
     const comments = parser.parseComments();
     const whitespaces = parser.skipWhitespaces();
@@ -146,5 +140,5 @@ export abstract class ParsingExpression {
     return result;
   }
 
-  abstract _parse(parser: Parser): Node | Node[] | null;
+  abstract _parse(parser: ParserContext): Node | Node[] | null;
 }

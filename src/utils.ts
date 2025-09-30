@@ -1,4 +1,4 @@
-import { Parser } from "./parser";
+import { Parser, ParserContext } from "./parser";
 
 export function bisectLeft(l: number[], v: number) {
   let lo = 0;
@@ -20,7 +20,10 @@ export function indent(str: string, _indent: string | number = 2) {
 }
 
 export class StringManipulation {
-  static getLineCol(parser: Parser, position?: number): [number, number] {
+  static getLineCol(
+    parser: ParserContext,
+    position?: number,
+  ): [number, number] {
     position ??= parser.position;
     if (parser.lineEnds.length === 0) {
       let last_line_end = parser.input.indexOf("\n");
@@ -43,12 +46,12 @@ export class StringManipulation {
     return [line + 1, col + 1];
   }
 
-  static getLineColStr(parser: Parser, position?: number): string {
+  static getLineColStr(parser: ParserContext, position?: number): string {
     const [line, col] = StringManipulation.getLineCol(parser, position);
     return `${line}:${col}`;
   }
 
-  static getContext(parser: Parser, position?: number, length?: number) {
+  static getContext(parser: ParserContext, position?: number, length?: number) {
     position = position ?? parser.position;
     const windowSize = 10;
 
@@ -73,7 +76,11 @@ export class StringManipulation {
     return retval.replace(/(?=[\r\n])\r?\n?/g, "⏎");
   }
 
-  static atPosContext(parser: Parser, position?: number, length?: number) {
+  static atPosContext(
+    parser: ParserContext,
+    position?: number,
+    length?: number,
+  ) {
     const lineColStr = StringManipulation.getLineColStr(parser, position);
     const context = StringManipulation.getContext(parser, position, length);
     return `${lineColStr} => '${context}'`;

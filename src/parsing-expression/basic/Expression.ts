@@ -1,7 +1,7 @@
 import { ParsingExpression } from "./ParsingExpression";
 import { GrammarDef } from "../../types";
 import { PEOptions } from "../types";
-import { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 
 /**
  * Conceptual wrapper for a grammar rule.
@@ -19,7 +19,7 @@ export class Expression extends ParsingExpression {
     super([element], options);
   }
 
-  _parse(parser: Parser) {
-    return [parser.getRule(this.element).parse(parser)];
+  _parse(ctx: ParserContext) {
+    return [ctx.getRule(this.element).parse(ctx)];
   }
 }

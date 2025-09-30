@@ -1,5 +1,5 @@
 import { Match } from "./Match";
-import { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 import { Node, Terminal } from "../../parse-tree";
 
 class EndOfFile extends Match {
@@ -10,12 +10,12 @@ class EndOfFile extends Match {
     });
   }
 
-  _parse(parser: Parser): Node {
-    if (parser.position === parser.input.length) {
-      return new Terminal(this, "", [parser.position, parser.position]);
+  _parse(ctx: ParserContext): Node {
+    if (ctx.position === ctx.input.length) {
+      return new Terminal(this, "", [ctx.position, ctx.position]);
     }
 
-    throw parser.noMatch(this);
+    throw ctx.noMatch(this);
   }
 }
 

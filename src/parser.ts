@@ -14,12 +14,13 @@ import { StringManipulation } from "./utils";
 import { GrammarError, NoMatch } from "./errors";
 import type { Node } from "./parse-tree";
 import { withProps } from "prop-scope";
+import { parse } from "@babel/core";
 
 export const DEFAULT_WS = "\t\r\n ";
 
 export const DEFAULT_KEYWORD_REGEX = /^[^\d\W]\w*$/;
 
-export class Parser {
+export class ParserContext {
   readonly FIRST_NOT = new Not([]);
 
   // State
@@ -39,13 +40,7 @@ export class Parser {
   resultCacheHits: number = 0;
   resultCacheMisses: number = 0;
 
-  // Rule cache: GrammarDef => ParsingExpression
-  _ruleCache: Map<GrammarDef, ParsingExpression> = new Map();
-  ruleCacheHits: number = 0;
-  ruleCacheMisses: number = 0;
-
   // Options
-  commentsModel?: GrammarDef;
   autokwd: boolean;
   ignoreCase?: boolean;
   skipws: string;
@@ -58,15 +53,31 @@ export class Parser {
   lineEnds: number[] = [];
 
   constructor(
+    readonly parser: Parser,
     readonly input: string,
-    readonly options: ParserOptions = {},
   ) {
-    this._debug = options.debug ?? false;
-    this.skipws = options.skipws ?? DEFAULT_WS;
-    this.eolterm = options.eolterm ?? false;
-    this.commentsModel = options.commentsModel;
-    this.autokwd = options.autokwd ?? true;
-    this.ignoreCase = options.ignoreCase;
+    this._debug = parser.options.debug ?? false;
+    this.skipws = parser.options.skipws ?? DEFAULT_WS;
+    this.eolterm = parser.options.eolterm ?? false;
+    this.autokwd = parser.options.autokwd ?? true;
+    this.ignoreCase = parser.options.ignoreCase;
+  }
+
+  parse(): Node {
+    // TODO: Could we make the Parser instance reusable for multiple parse calls?
+    let pt_node: Node;
+    try {
+      pt_node = this.parser.getRule(this.parser.parseModel).parse(this);
+    } catch (e) {
+      if (e instanceof NoMatch) {
+        if (e.rules[0] === this.parser.FIRST_NOT) {
+          e.rules.splice(0, 1);
+        }
+      }
+      throw e;
+    }
+
+    return pt_node;
   }
 
   skipWhitespaces(): string {
@@ -90,7 +101,11 @@ export class Parser {
   }
 
   parseComments(): Node[] {
-    if (this.in_lex_rule || this.in_parse_comments || !this.commentsModel) {
+    if (
+      this.in_lex_rule ||
+      this.in_parse_comments ||
+      !this.parser.options.commentsModel
+    ) {
       return [];
     }
 
@@ -100,7 +115,9 @@ export class Parser {
       try {
         // eslint-disable-next-line no-constant-condition
         while (true) {
-          comments.push(this.getRule(this.commentsModel!).parse(this));
+          comments.push(
+            this.parser.getRule(this.parser.options.commentsModel!).parse(this),
+          );
         }
       } catch (e) {
         if (e instanceof NoMatch) {
@@ -112,28 +129,6 @@ export class Parser {
 
       return comments;
     });
-  }
-
-  static parse(
-    input: string,
-    parseModel: GrammarDef,
-    options?: ParserOptions,
-  ): Node {
-    // TODO: Could we make the Parser instance reusable for multiple parse calls?
-    const parser = new Parser(input, options ?? {});
-    let pt_node: Node;
-    try {
-      pt_node = parser.getRule(parseModel).parse(parser);
-    } catch (e) {
-      if (e instanceof NoMatch) {
-        if (e.rules[0] === parser.FIRST_NOT) {
-          e.rules.splice(0, 1);
-        }
-      }
-      throw e;
-    }
-
-    return pt_node;
   }
 
   debug(msg: string, indentChange: number = 0) {
@@ -185,6 +180,28 @@ export class Parser {
     return this._noMatch;
   }
 
+  getRule(rule: GrammarDef): ParsingExpression {
+    return this.parser.getRule(rule);
+  }
+}
+
+export class Parser {
+  readonly FIRST_NOT = new Not(null);
+
+  // Rule cache: GrammarDef => ParsingExpression
+  _ruleCache: Map<GrammarDef, ParsingExpression> = new Map();
+  ruleCacheHits: number = 0;
+  ruleCacheMisses: number = 0;
+
+  constructor(
+    readonly parseModel: GrammarDef,
+    readonly options: ParserOptions = {},
+  ) {}
+
+  parse(input: string): Node {
+    return new ParserContext(this, input).parse();
+  }
+
   getRule(x: GrammarDef): ParsingExpression {
     if (this._ruleCache.has(x)) {
       this.ruleCacheHits++;
@@ -214,7 +231,7 @@ export class Parser {
       const s = "" + x;
 
       // If autokwd is enabled and the string matches the keyword regex, treat it as a keyword.
-      if (this.autokwd && DEFAULT_KEYWORD_REGEX.test(s)) {
+      if (this.options.autokwd && DEFAULT_KEYWORD_REGEX.test(s)) {
         return new Keyword(s);
       }
 
@@ -258,7 +275,7 @@ export class Parser {
 
     if (typeof expr === "string" || expr instanceof String) {
       const s = "" + expr;
-      if (this.autokwd && DEFAULT_KEYWORD_REGEX.test(s)) {
+      if (this.options.autokwd && DEFAULT_KEYWORD_REGEX.test(s)) {
         return new Keyword(s, { ruleName });
       }
       return new StringMatch(s, { ruleName });

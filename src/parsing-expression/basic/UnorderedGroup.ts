@@ -1,7 +1,7 @@
 import { Sequence } from "./Sequence";
 import { GrammarDef } from "../../types";
 import { ParseManyOptions } from "../types";
-import { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 
 export class UnorderedGroup extends Sequence {
   constructor(elements: GrammarDef[], options: ParseManyOptions = {}) {
@@ -9,7 +9,7 @@ export class UnorderedGroup extends Sequence {
     throw new Error("UnorderedGroup expression is not implemented.");
   }
 
-  _parse(parser: Parser): any {
+  _parse(ctx: ParserContext): any {
     // TODO: implement
     throw new Error("Method is not implemented.");
   }

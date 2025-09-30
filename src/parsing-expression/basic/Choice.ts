@@ -1,7 +1,7 @@
 import { ParsingExpression } from "./ParsingExpression";
 import { GrammarDef } from "../../types";
 import { PEOptions } from "../types";
-import { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 import { NoMatch } from "../../errors";
 import type { Node } from "../../parse-tree";
 
@@ -13,13 +13,13 @@ export class Choice extends ParsingExpression {
     super(elements, options);
   }
 
-  _parse(parser: Parser) {
-    const c_pos = parser.position;
+  _parse(ctx: ParserContext) {
+    const c_pos = ctx.position;
     let emptyMatch: Node | undefined;
     for (const element of this.elements) {
-      const node = parser.getRule(element);
+      const node = ctx.getRule(element);
       try {
-        const result = node.parse(parser);
+        const result = node.parse(ctx);
         if (!result.hasContent()) {
           emptyMatch ??= result;
           continue;
@@ -27,7 +27,7 @@ export class Choice extends ParsingExpression {
         return [result];
       } catch (e) {
         if (e instanceof NoMatch) {
-          parser.position = c_pos;
+          ctx.position = c_pos;
         } else {
           throw e;
         }
@@ -38,6 +38,6 @@ export class Choice extends ParsingExpression {
       return [emptyMatch];
     }
 
-    throw parser.noMatch(this, c_pos);
+    throw ctx.noMatch(this, c_pos);
   }
 }

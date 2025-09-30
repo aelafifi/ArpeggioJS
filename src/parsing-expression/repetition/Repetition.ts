@@ -1,6 +1,6 @@
 import { ParseManyOptions } from "../index";
 import type { GrammarDef } from "../../types";
-import type { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 import type { Node } from "../../parse-tree";
 import { NoMatch } from "../../errors";
 import { ParsingExpression } from "../basic";
@@ -22,20 +22,20 @@ export class Repetition extends ParsingExpression {
     super([element], options);
   }
 
-  _parse(parser: Parser): Node | Node[] | null {
+  _parse(ctx: ParserContext): Node | Node[] | null {
     const results: Node[] = [];
-    let c_pos = parser.position;
-    const rule = parser.getRule(this.element);
-    const sep = this.options.sep ? parser.getRule(this.options.sep) : null;
+    let c_pos = ctx.position;
+    const rule = ctx.getRule(this.element);
+    const sep = this.options.sep ? ctx.getRule(this.options.sep) : null;
     let found = 0;
 
     while (found < this.options.max) {
       try {
-        c_pos = parser.position;
+        c_pos = ctx.position;
         if (sep && found > 0) {
-          results.push(sep.parse(parser));
+          results.push(sep.parse(ctx));
         }
-        const result = rule.parse(parser);
+        const result = rule.parse(ctx);
         results.push(result);
         found++;
 
@@ -46,7 +46,7 @@ export class Repetition extends ParsingExpression {
         }
       } catch (e) {
         if (e instanceof NoMatch) {
-          parser.position = c_pos;
+          ctx.position = c_pos;
           if (found >= this.options.min) {
             break;
           }

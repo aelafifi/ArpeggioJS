@@ -1,4 +1,4 @@
-import type { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 
 import { SyntaxPredicate } from "./SyntaxPredicate";
 
@@ -7,7 +7,7 @@ class Empty extends SyntaxPredicate {
     super([]);
   }
 
-  _parse(parser: Parser) {
+  _parse(ctx: ParserContext) {
     return null;
   }
 }

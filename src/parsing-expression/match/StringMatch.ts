@@ -1,4 +1,4 @@
-import { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 import { Node, Terminal } from "../../parse-tree";
 
 import { Match } from "./Match";
@@ -15,25 +15,22 @@ export class StringMatch extends Match {
     super(pattern, options);
   }
 
-  _parse(parser: Parser): Node {
-    const c_pos = parser.position;
-    const ignoreCase = this.ignoreCase ?? parser.ignoreCase;
+  _parse(ctx: ParserContext): Node {
+    const c_pos = ctx.position;
+    const ignoreCase = this.ignoreCase ?? ctx.ignoreCase;
 
     const a = ignoreCase ? this.pattern.toLowerCase() : this.pattern;
-    const part = parser.input.slice(
-      parser.position,
-      parser.position + a.length,
-    );
+    const part = ctx.input.slice(ctx.position, ctx.position + a.length);
     const b = ignoreCase ? part.toLowerCase() : part;
     if (a === b) {
-      parser.debug(
-        `++ Match '${this.pattern}' ${parser.atPosition(c_pos, a.length)}`,
+      ctx.debug(
+        `++ Match '${this.pattern}' ${ctx.atPosition(c_pos, a.length)}`,
       );
-      parser.position += a.length;
-      return new Terminal(this, part, [c_pos, parser.position]);
+      ctx.position += a.length;
+      return new Terminal(this, part, [c_pos, ctx.position]);
     }
 
-    parser.debug(`-- No match '${this.pattern}' ${parser.atPosition(c_pos)}`);
-    throw parser.noMatch(this, c_pos);
+    ctx.debug(`-- No match '${this.pattern}' ${ctx.atPosition(c_pos)}`);
+    throw ctx.noMatch(this, c_pos);
   }
 }

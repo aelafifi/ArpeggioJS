@@ -120,7 +120,7 @@ The base class of all expressions, it contains the main (generic) options:
 
 Methods:
 
-- parse(parser: Parser)
+- parse(ctx: Parser)
     1. log(">> Matching rule {ruleName} at position {line:col} => {context}", indent=1)
     2. Check cache
         - If cached:
@@ -128,7 +128,7 @@ Methods:
             - increase cache hits
             - log("** Cache hit for {ruleName} as {line:col} = '{result}' : new_pos={line:col}")
             - log("<<+ Matched rule {ruleName} at position {line:col}")
-            - if result is NOMATCH_MARKER, raise `parser.nm`, otherwise return the result
+            - if result is NOMATCH_MARKER, raise `ctx.nm`, otherwise return the result
         - else:
             - increase cache misses
 - mjnkbh

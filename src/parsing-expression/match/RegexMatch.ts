@@ -1,4 +1,4 @@
-import { Parser } from "../../parser";
+import { ParserContext } from "../../parser";
 import { Node, Terminal } from "../../parse-tree";
 
 import { Match } from "./Match";
@@ -12,8 +12,8 @@ export class RegexMatch extends Match {
     super(pattern, options);
   }
 
-  getRegex(parser: Parser) {
-    const ignoreCase = this.ignoreCase ?? parser.ignoreCase;
+  getRegex(ctx: ParserContext) {
+    const ignoreCase = this.ignoreCase ?? ctx.ignoreCase;
     if (ignoreCase === true && !this.pattern.ignoreCase) {
       const flags = this.pattern.flags + "i";
       return new RegExp(this.pattern.source, flags);
@@ -21,21 +21,19 @@ export class RegexMatch extends Match {
     return this.pattern;
   }
 
-  _parse(parser: Parser): Node {
-    const c_pos = parser.position;
-    const regex = this.getRegex(parser);
-    const part = parser.input.slice(parser.position);
+  _parse(ctx: ParserContext): Node {
+    const c_pos = ctx.position;
+    const regex = this.getRegex(ctx);
+    const part = ctx.input.slice(ctx.position);
     const match = part.match(regex);
 
     if (match === null || match.index !== 0) {
-      parser.debug(`-- No match ${this.pattern} ${parser.atPosition(c_pos)}`);
-      throw parser.noMatch(this, c_pos);
+      ctx.debug(`-- No match ${this.pattern} ${ctx.atPosition(c_pos)}`);
+      throw ctx.noMatch(this, c_pos);
     }
 
-    parser.debug(
-      `++ Match ${regex} ${parser.atPosition(c_pos, match[0].length)}`,
-    );
-    parser.position += match[0].length;
+    ctx.debug(`++ Match ${regex} ${ctx.atPosition(c_pos, match[0].length)}`);
+    ctx.position += match[0].length;
     return new Terminal(this, match[0], [c_pos, c_pos + match[0].length]);
   }
 }
