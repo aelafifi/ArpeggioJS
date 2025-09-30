@@ -26,7 +26,7 @@ abstract class ParsingExpression {
 
     constructor(
         readonly elements: GrammarDef[],
-        readonly options: ParsingExpressionOptions = {}
+        readonly options: PEOptions = {}
     ) {
         //
     }

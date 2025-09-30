@@ -1,21 +1,22 @@
 import {
   And,
-  Choice,
   EOF,
   Keyword,
   Not,
   Optional,
-  ParsingExpression,
   RegexMatch,
-  Sequence,
   StringMatch,
-  SUPPRESS,
 } from "../parsing-expression";
 import { Parser } from "../parser";
-import { PTVisitor } from "../parset-tree/PTVisitor";
+import { PTVisitor } from "../parse-tree/PTVisitor";
 import { GrammarDef } from "../types";
-import { PTNode } from "../parset-tree";
-import { OneOrMore, ZeroOrMore } from "../parsing-expression/repetition";
+import { PTNode } from "../parse-tree";
+import { OneOrMore } from "../parsing-expression/repetition/OneOrMore";
+import { ZeroOrMore } from "../parsing-expression/repetition/ZeroOrMore";
+import { SUPPRESS } from "../parsing-expression/constants";
+import { ParsingExpression } from "../parsing-expression/basic/ParsingExpression";
+import { Sequence } from "../parsing-expression/basic/Sequence";
+import { Choice } from "../parsing-expression/basic/Choice";
 
 const S_ = (str: string | RegExp) =>
   str instanceof RegExp

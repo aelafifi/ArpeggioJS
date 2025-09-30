@@ -9,9 +9,14 @@ export abstract class PTNode {
 
   _originalCode?: string;
 
+  __refiner?: (node: PTNode, value: any) => any;
+  __ruleName?: string;
+  __suppress?: boolean;
+
   constructor(
     rule: ParsingExpression,
     range: [number, number],
+    public _ruleName?: string,
     pres: {
       ws?: string;
       comments?: PTNode[];
@@ -24,21 +29,21 @@ export abstract class PTNode {
     this.commentsBefore = pres.comments ?? [];
   }
 
+  get ruleName() {
+    return this._ruleName ?? this.rule.ruleName;
+  }
+
   get name() {
     return `${this.rule.name} [${this.start}:${this.end}]`;
   }
-
-  abstract get isSuppressed(): boolean;
 
   abstract get desc(): string;
 
   abstract get flatStr(): string;
 
-  abstract get _value(): any;
+  abstract hasContent(): boolean;
 
-  abstract get refined(): any;
-
-  treeStr(indent = 0) {
+  treeStr(includeSuppressed: boolean = false, indent = 0) {
     return `${"  ".repeat(indent)}${this.name}`;
   }
 

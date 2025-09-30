@@ -1,24 +1,26 @@
-import { Match, SUPPRESS } from "../parsing-expression";
-
 import { PTNode } from "./PTNode";
 import { getRefinerFunction } from "./utils";
+import { SUPPRESS } from "../parsing-expression/constants";
+import { ParsingExpression } from "../parsing-expression/basic/ParsingExpression";
+import { Match, SyntaxPredicate } from "../parsing-expression";
 
 export class Terminal extends PTNode {
   constructor(
-    rule: Match,
+    rule: Match | SyntaxPredicate,
     public value: string,
     range: [number, number],
+    _ruleName?: string,
     pres: {
       ws?: string;
       comments?: PTNode[];
     } = {},
   ) {
-    super(rule, range, pres);
+    super(rule, range, _ruleName, pres);
   }
 
   get desc() {
     return this.value
-      ? `${this.rule.name} '${this.value}' [${this.start}:${this.end}]`
+      ? `${this.ruleName} '${this.value}' [${this.start}:${this.end}]`
       : this.name;
   }
 
@@ -31,30 +33,12 @@ export class Terminal extends PTNode {
     );
   }
 
-  get isSuppressed() {
-    return this.rule.refiner === SUPPRESS;
+  treeStr(includeSuppressed: boolean = false, indent = 0) {
+    return `${super.treeStr(includeSuppressed, indent)}: "${this.value}"`;
   }
 
-  get _value() {
-    if (this.isSuppressed) {
-      return null;
-    }
-
-    return this.value;
-  }
-
-  get refined(): any {
-    if (this.isSuppressed) {
-      return null;
-    }
-
-    const refiner = getRefinerFunction(this.rule.refiner) as Function;
-
-    return refiner(this.value);
-  }
-
-  treeStr(indent = 0) {
-    return `${super.treeStr(indent)}: ${this.value}`;
+  hasContent(): boolean {
+    return this.value !== "";
   }
 
   toJSON() {

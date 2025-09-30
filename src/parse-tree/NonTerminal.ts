@@ -1,19 +1,22 @@
-import { ParsingExpression, SUPPRESS } from "../parsing-expression";
-
 import { PTNode } from "./PTNode";
-import { getRefinerFunction } from "./utils";
+import {
+  ParsingExpression,
+  Match,
+  SyntaxPredicate,
+} from "../parsing-expression";
 
 export class NonTerminal extends PTNode {
   constructor(
-    rule: ParsingExpression,
+    rule: Exclude<ParsingExpression, Match | SyntaxPredicate>,
     public children: PTNode[],
     range: [number, number],
+    _ruleName?: string,
     pres: {
       ws?: string;
       comments?: PTNode[];
     } = {},
   ) {
-    super(rule, range, pres);
+    super(rule, range, _ruleName, pres);
   }
 
   get desc() {
@@ -29,68 +32,16 @@ export class NonTerminal extends PTNode {
     );
   }
 
-  get isSuppressed() {
-    return (
-      this.rule.refiner === SUPPRESS ||
-      (this.children.length > 0 && this.children.every((c) => c.isSuppressed))
-    );
+  hasContent(): boolean {
+    return this.children.some((c) => c.hasContent());
   }
 
-  get _value() {
-    if (this.isSuppressed) {
-      return null;
-    }
-
-    const refinedChildren = this.children
-      .filter((c) => c.rule.refiner !== SUPPRESS)
-      .map((c) => c.refined);
-
-    if (
-      this.rule.shouldReduce ||
-      (this.rule.couldReduce && this.rule.elements.length === 1)
-    ) {
-      switch (refinedChildren.length) {
-        case 0:
-          return null;
-        case 1:
-          return refinedChildren[0];
-      }
-    }
-
-    return refinedChildren;
-  }
-
-  get refined(): any {
-    if (this.isSuppressed) {
-      return null;
-    }
-
-    const refiner = getRefinerFunction(this.rule.refiner) as Function;
-
-    const refinedChildren = this.children
-      .filter((c) => c.rule.refiner !== SUPPRESS)
-      .map((c) => c.refined);
-
-    if (
-      this.rule.shouldReduce ||
-      (this.rule.couldReduce && this.rule.elements.length === 1)
-    ) {
-      switch (refinedChildren.length) {
-        case 0:
-          return refiner(null);
-        case 1:
-          return refiner(refinedChildren[0]);
-      }
-    }
-
-    return refiner(refinedChildren);
-  }
-
-  treeStr(indent = 0) {
-    const children =
-      this.children.map((c) => c.treeStr(indent + 1)).join("\n") ||
-      "  ".repeat(indent + 1) + "N/A";
-    return `${super.treeStr(indent)}\n${children}`;
+  treeStr(includeSuppressed: boolean = false, indent = 0) {
+    const children = this.children
+      .filter((c) => !c.rule.suppress || includeSuppressed)
+      .map((c) => c.treeStr(includeSuppressed, indent + 1))
+      .join("\n");
+    return `${super.treeStr(includeSuppressed, indent)}${children ? "\n" + children : " —> ø"}`;
   }
 
   toJSON() {

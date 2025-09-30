@@ -1,14 +1,15 @@
 import {
-  Choice,
   EOF,
   Optional,
   RegexMatch,
-  Sequence,
   StringMatch,
-  SUPPRESS,
 } from "../src/parsing-expression";
 import { Parser } from "../src/parser";
-import { ZeroOrMore } from "../src/parsing-expression/repetition";
+
+import { ZeroOrMore } from "../src/parsing-expression/repetition/ZeroOrMore";
+import { SUPPRESS } from "../src/parsing-expression/constants";
+import { Sequence } from "../src/parsing-expression/basic/Sequence";
+import { Choice } from "../src/parsing-expression/basic/Choice";
 
 const TRUE = new StringMatch("true", { refiner: () => true });
 const FALSE = new StringMatch("false", { refiner: () => false });

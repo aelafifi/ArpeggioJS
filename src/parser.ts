@@ -1,5 +1,6 @@
 import {
-  Empty,
+  Epsilon,
+  Expression,
   Keyword,
   Match,
   Not,
@@ -8,11 +9,15 @@ import {
   Sequence,
   StringMatch,
 } from "./parsing-expression";
-import { DEFAULT_KEYWORD_REGEX, DEFAULT_WS, GrammarDef } from "./types";
+import type { GrammarDef } from "./types";
 import { bisectLeft } from "./utils";
 import { GrammarError, NoMatch } from "./errors";
-import { PTNode } from "./parset-tree";
+import { PTNode } from "./parse-tree";
 import { withProps } from "prop-scope";
+
+export const DEFAULT_WS = "\t\r\n ";
+
+export const DEFAULT_KEYWORD_REGEX = /^[^\d\W]\w*$/;
 
 export class WhitespaceSkipper {
   static skipWhitespaces(parser: Parser): string {
@@ -29,8 +34,7 @@ export class WhitespaceSkipper {
       parser.position < parser.input.length &&
       skipws.includes(parser.input[parser.position])
     ) {
-      whitespaces += parser.input[parser.position];
-      parser.position++;
+      whitespaces += parser.input[parser.position++];
     }
 
     return whitespaces;
@@ -136,6 +140,7 @@ export interface ParserOptions {
   eolterm?: boolean;
   commentsModel?: GrammarDef;
   autokwd?: boolean;
+  autoReduce?: boolean;
 }
 
 export class Parser {
@@ -172,6 +177,7 @@ export class Parser {
   ignoreCase?: boolean;
   skipws: string;
   eolterm: boolean;
+  autoReduce: boolean;
 
   // For debugging
   _debug: boolean;
@@ -189,6 +195,7 @@ export class Parser {
     this.commentsModel = options.commentsModel;
     this.autokwd = options.autokwd ?? true;
     this.ignoreCase = options.ignoreCase;
+    this.autoReduce = options.autoReduce ?? true;
   }
 
   static parse(
@@ -279,7 +286,7 @@ export class Parser {
   private _getRule(x: GrammarDef): ParsingExpression {
     if (x === null) {
       // If x is null or undefined, it means it should match nothing (epsilon).
-      return new Empty();
+      return Epsilon;
     }
 
     if (x instanceof ParsingExpression) {
@@ -305,25 +312,54 @@ export class Parser {
     }
 
     if (Array.isArray(x)) {
-      if (x.length === 1) {
-        return this.getRule(x[0]);
-      }
+      // If x is an array, it means it should be treated as a sequence of expressions.
       return new Sequence(x);
     }
 
     if (typeof x === "function") {
-      // TODO: Use CrossRef instead of Expression here?
       // If x is a function, it means it should be treated as a rule reference.
       const ruleName = x.name;
-      let expr: GrammarDef = x;
-      while (typeof expr === "function") {
+      let expr: GrammarDef = x();
+
+      // Unlock all nested anonymous functions (e.g., () => () => ... )
+      while (typeof expr === "function" && expr.name === "") {
         expr = expr();
       }
-      const result = this.getRule(expr);
-      result.ruleName ||= ruleName;
-      return result;
+
+      return this.__getFunctionPE(expr, ruleName);
     }
 
     throw new GrammarError(`Unknown expression/rule: ${x}`);
+  }
+
+  private __getFunctionPE(
+    expr: GrammarDef,
+    ruleName: string,
+  ): ParsingExpression {
+    if (expr === null) {
+      return Epsilon;
+    }
+
+    if (typeof expr === "string" || expr instanceof String) {
+      const s = "" + expr;
+      if (this.autokwd && DEFAULT_KEYWORD_REGEX.test(s)) {
+        return new Keyword(s, { ruleName });
+      }
+      return new StringMatch(s, { ruleName });
+    }
+
+    if (expr instanceof RegExp) {
+      return new RegexMatch(expr, { ruleName });
+    }
+
+    if (Array.isArray(expr)) {
+      return new Sequence(expr, { ruleName });
+    }
+
+    if (expr instanceof ParsingExpression) {
+      return new Expression(expr, { ruleName, suppress: expr.suppress });
+    }
+
+    return new Expression(expr, { ruleName });
   }
 }

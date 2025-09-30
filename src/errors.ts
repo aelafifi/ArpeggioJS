@@ -1,7 +1,10 @@
 import { Parser } from "./parser";
-import { ParsingExpression } from "./parsing-expression";
+
+import { ParsingExpression } from "./parsing-expression/basic/ParsingExpression";
 
 export class GrammarError extends Error {}
+
+export class AmbiguityError extends Error {}
 
 export class NoMatch extends Error {
   constructor(

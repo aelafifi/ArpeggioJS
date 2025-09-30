@@ -1,9 +1,4 @@
-import { ParsingExpression } from "./parsing-expression";
-
-export const DEFAULT_WS = "\t\r\n ";
-export const NOMATCH_MARKER = 0;
-
-export const DEFAULT_KEYWORD_REGEX = /^[^\d\W]\w*$/;
+import type { ParsingExpression } from "./parsing-expression";
 
 export type GrammarDef =
   | null // => Empty

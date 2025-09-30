@@ -1,19 +1,22 @@
 // Lexical invariants
 import {
-  Choice,
   EOF,
   Keyword,
   LexSequence,
   Optional,
   RegexMatch,
-  Sequence,
   StringMatch,
-  SUPPRESS,
 } from "./parsing-expression";
 import { Parser } from "./parser";
-import { Terminal } from "./parset-tree";
-import { And, Not } from "./parsing-expression/syntax-predicate";
-import { OneOrMore, ZeroOrMore } from "./parsing-expression/repetition";
+import { Terminal } from "./parse-tree";
+import { OneOrMore } from "./parsing-expression/repetition/OneOrMore";
+import { ZeroOrMore } from "./parsing-expression/repetition/ZeroOrMore";
+import { Not } from "./parsing-expression/syntax-predicate/Not";
+import { And } from "./parsing-expression/syntax-predicate/And";
+import { SUPPRESS } from "./parsing-expression/constants";
+import { Sequence } from "./parsing-expression/basic/Sequence";
+import { LexRule } from "./parsing-expression/basic/LexRule";
+import { Choice } from "./parsing-expression/basic/Choice";
 
 const COLON = new StringMatch(":", { refiner: SUPPRESS });
 const ORDERED_CHOICE = new StringMatch("|", { refiner: SUPPRESS });
@@ -33,7 +36,7 @@ const rule = () =>
   new Sequence([
     rule_name,
     COLON,
-    new Optional(new LexSequence([/\n\s*/, ORDERED_CHOICE]), {
+    new Optional(new LexRule([/\n\s*/, ORDERED_CHOICE]), {
       refiner: SUPPRESS,
     }),
     ordered_choice,
@@ -42,12 +45,12 @@ const rule = () =>
 const ordered_choice = () =>
   new OneOrMore(sequence, {
     sep: ORDERED_CHOICE,
-    refiner(node, children) {
-      if (children.length === 1) {
-        return children[0];
-      }
-      return new Choice(children);
-    },
+    // refiner(node, children) {
+    //   if (children.length === 1) {
+    //     return children[0];
+    //   }
+    //   return new Choice(children);
+    // },
   });
 
 const fullExpression = () =>
@@ -59,43 +62,43 @@ const fullExpression = () =>
     ],
     {
       skipws: "",
-      refiner(node, children) {
-        const [syntaxPredicate, expression, quantifier] = children;
-        let x = expression;
-
-        switch (quantifier) {
-          case ZERO_OR_MORE:
-            x = new ZeroOrMore(x);
-            break;
-          case ONE_OR_MORE:
-            x = new OneOrMore(x);
-            break;
-          case OPTIONAL:
-            x = new Optional(x);
-            break;
-        }
-
-        switch (syntaxPredicate) {
-          case AND:
-            x = new And(x);
-            break;
-          case NOT:
-            x = new Not(x);
-            break;
-        }
-
-        return x;
-      },
+      // refiner(node, children) {
+      //   const [syntaxPredicate, expression, quantifier] = children;
+      //   let x = expression;
+      //
+      //   switch (quantifier) {
+      //     case ZERO_OR_MORE:
+      //       x = new ZeroOrMore(x);
+      //       break;
+      //     case ONE_OR_MORE:
+      //       x = new OneOrMore(x);
+      //       break;
+      //     case OPTIONAL:
+      //       x = new Optional(x);
+      //       break;
+      //   }
+      //
+      //   switch (syntaxPredicate) {
+      //     case AND:
+      //       x = new And(x);
+      //       break;
+      //     case NOT:
+      //       x = new Not(x);
+      //       break;
+      //   }
+      //
+      //   return x;
+      // },
     },
   );
 const sequence = () =>
   new OneOrMore(fullExpression, {
-    refiner(node, children) {
-      if (children.length === 1) {
-        return children[0];
-      }
-      return new Sequence(children);
-    },
+    // refiner(node, children) {
+    //   if (children.length === 1) {
+    //     return children[0];
+    //   }
+    //   return new Sequence(children);
+    // },
   });
 
 const premetive = () => new Choice([regex, str_match, keyword_match]);

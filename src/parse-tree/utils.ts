@@ -1,5 +1,6 @@
 import { RefinerFn } from "../types";
-import { SUPPRESS } from "../parsing-expression";
+
+import { SUPPRESS } from "../parsing-expression/constants";
 
 export function getRefinerFunction(
   refiner?: RefinerFn | number | number[] | typeof SUPPRESS,
