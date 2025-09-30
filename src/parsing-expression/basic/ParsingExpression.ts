@@ -1,11 +1,6 @@
 import { GrammarDef } from "../../types";
 import { PEOptions, VisitorFn } from "../types";
-import {
-  CommentsParser,
-  Parser,
-  StringManipulation,
-  WhitespaceSkipper,
-} from "../../parser";
+import { Parser, StringManipulation } from "../../parser";
 import { Node, NonTerminal } from "../../parse-tree";
 import { NoMatch } from "../../errors";
 import { IGNORE, withProps } from "prop-scope";
@@ -105,8 +100,8 @@ export abstract class ParsingExpression {
 
   _doParsing(parser: Parser): Node {
     const init_pos = parser.position;
-    const comments = CommentsParser.parseComments(parser);
-    const whitespaces = WhitespaceSkipper.skipWhitespaces(parser);
+    const comments = parser.parseComments();
+    const whitespaces = parser.skipWhitespaces();
     const c_pos = parser.position;
 
     if (!parser.in_parse_comments) {

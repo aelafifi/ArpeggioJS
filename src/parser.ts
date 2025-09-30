@@ -9,7 +9,7 @@ import {
   Sequence,
   StringMatch,
 } from "./parsing-expression";
-import type { GrammarDef } from "./types";
+import type { GrammarDef, ParserOptions } from "./types";
 import { bisectLeft } from "./utils";
 import { GrammarError, NoMatch } from "./errors";
 import type { Node } from "./parse-tree";
@@ -18,59 +18,6 @@ import { withProps } from "prop-scope";
 export const DEFAULT_WS = "\t\r\n ";
 
 export const DEFAULT_KEYWORD_REGEX = /^[^\d\W]\w*$/;
-
-export class WhitespaceSkipper {
-  static skipWhitespaces(parser: Parser): string {
-    const skipws = parser.eolterm
-      ? parser.skipws.replace(/[\r\n]/g, "")
-      : parser.skipws;
-    let whitespaces = "";
-
-    if (!skipws || parser.in_lex_rule) {
-      return whitespaces;
-    }
-
-    while (
-      parser.position < parser.input.length &&
-      skipws.includes(parser.input[parser.position])
-    ) {
-      whitespaces += parser.input[parser.position++];
-    }
-
-    return whitespaces;
-  }
-}
-
-export class CommentsParser {
-  static parseComments(parser: Parser): Node[] {
-    if (
-      parser.in_lex_rule ||
-      parser.in_parse_comments ||
-      !parser.commentsModel
-    ) {
-      return [];
-    }
-
-    return withProps(parser as any, { in_parse_comments: true }, () => {
-      const comments: Node[] = [];
-
-      try {
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          comments.push(parser.getRule(parser.commentsModel!).parse(parser));
-        }
-      } catch (e) {
-        if (e instanceof NoMatch) {
-          // NoMatch in comment matching is perfectly legal, and no action should be taken.
-        } else {
-          throw e;
-        }
-      }
-
-      return comments;
-    });
-  }
-}
 
 export class StringManipulation {
   static getLineCol(parser: Parser, position?: number): [number, number] {
@@ -133,15 +80,6 @@ export class StringManipulation {
   }
 }
 
-export interface ParserOptions {
-  debug?: boolean;
-  ignoreCase?: boolean;
-  skipws?: string;
-  eolterm?: boolean;
-  commentsModel?: GrammarDef;
-  autokwd?: boolean;
-}
-
 export class Parser {
   readonly FIRST_NOT = new Not([]);
 
@@ -190,6 +128,51 @@ export class Parser {
     this.commentsModel = options.commentsModel;
     this.autokwd = options.autokwd ?? true;
     this.ignoreCase = options.ignoreCase;
+  }
+
+  skipWhitespaces(): string {
+    const skipws = this.eolterm
+      ? this.skipws.replace(/[\r\n]/g, "")
+      : this.skipws;
+    let whitespaces = "";
+
+    if (!skipws || this.in_lex_rule) {
+      return whitespaces;
+    }
+
+    while (
+      this.position < this.input.length &&
+      skipws.includes(this.input[this.position])
+    ) {
+      whitespaces += this.input[this.position++];
+    }
+
+    return whitespaces;
+  }
+
+  parseComments(): Node[] {
+    if (this.in_lex_rule || this.in_parse_comments || !this.commentsModel) {
+      return [];
+    }
+
+    return withProps(this as any, { in_parse_comments: true }, () => {
+      const comments: Node[] = [];
+
+      try {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          comments.push(this.getRule(this.commentsModel!).parse(this));
+        }
+      } catch (e) {
+        if (e instanceof NoMatch) {
+          // NoMatch in comment matching is perfectly legal, and no action should be taken.
+        } else {
+          throw e;
+        }
+      }
+
+      return comments;
+    });
   }
 
   static parse(

@@ -9,4 +9,11 @@ export type GrammarDef =
   | GrammarDef[] // => Sequence
   | (() => GrammarDef); // => Lazy evaluation
 
-export type RefinerFn = (value: any) => any;
+export interface ParserOptions {
+  debug?: boolean;
+  ignoreCase?: boolean;
+  skipws?: string;
+  eolterm?: boolean;
+  commentsModel?: GrammarDef;
+  autokwd?: boolean;
+}
