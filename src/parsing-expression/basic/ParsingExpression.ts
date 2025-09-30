@@ -1,9 +1,10 @@
 import { GrammarDef } from "../../types";
 import { PEOptions, VisitorFn } from "../types";
-import { Parser, StringManipulation } from "../../parser";
+import { Parser } from "../../parser";
 import { Node, NonTerminal } from "../../parse-tree";
 import { NoMatch } from "../../errors";
 import { IGNORE, withProps } from "prop-scope";
+import { StringManipulation } from "../../utils";
 
 export abstract class ParsingExpression {
   ruleName: string;
