@@ -12,7 +12,7 @@ import {
 import type { GrammarDef } from "./types";
 import { bisectLeft } from "./utils";
 import { GrammarError, NoMatch } from "./errors";
-import { PTNode } from "./parse-tree";
+import type { Node } from "./parse-tree";
 import { withProps } from "prop-scope";
 
 export const DEFAULT_WS = "\t\r\n ";
@@ -42,7 +42,7 @@ export class WhitespaceSkipper {
 }
 
 export class CommentsParser {
-  static parseComments(parser: Parser): PTNode[] {
+  static parseComments(parser: Parser): Node[] {
     if (
       parser.in_lex_rule ||
       parser.in_parse_comments ||
@@ -52,7 +52,7 @@ export class CommentsParser {
     }
 
     return withProps(parser as any, { in_parse_comments: true }, () => {
-      const comments: PTNode[] = [];
+      const comments: Node[] = [];
 
       try {
         // eslint-disable-next-line no-constant-condition
@@ -140,14 +140,10 @@ export interface ParserOptions {
   eolterm?: boolean;
   commentsModel?: GrammarDef;
   autokwd?: boolean;
-  autoReduce?: boolean;
 }
 
 export class Parser {
   readonly FIRST_NOT = new Not([]);
-
-  // Core
-  parserModel!: ParsingExpression;
 
   // State
   in_rule?: string;
@@ -160,8 +156,8 @@ export class Parser {
   _noMatch?: NoMatch;
 
   // Cache
-  // Result cache: [ParsingExpression, position] => [PTNode | null, newPosition]
-  _resultCache: Map<[ParsingExpression, number], [PTNode | null, number]> =
+  // Result cache: [ParsingExpression, position] => [Node | null, newPosition]
+  _resultCache: Map<[ParsingExpression, number], [Node | null, number]> =
     new Map();
   resultCacheHits: number = 0;
   resultCacheMisses: number = 0;
@@ -177,7 +173,6 @@ export class Parser {
   ignoreCase?: boolean;
   skipws: string;
   eolterm: boolean;
-  autoReduce: boolean;
 
   // For debugging
   _debug: boolean;
@@ -195,17 +190,16 @@ export class Parser {
     this.commentsModel = options.commentsModel;
     this.autokwd = options.autokwd ?? true;
     this.ignoreCase = options.ignoreCase;
-    this.autoReduce = options.autoReduce ?? true;
   }
 
   static parse(
     input: string,
     parseModel: GrammarDef,
     options?: ParserOptions,
-  ): PTNode {
+  ): Node {
     // TODO: Could we make the Parser instance reusable for multiple parse calls?
     const parser = new Parser(input, options ?? {});
-    let pt_node: PTNode;
+    let pt_node: Node;
     try {
       pt_node = parser.getRule(parseModel).parse(parser);
     } catch (e) {

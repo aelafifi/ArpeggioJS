@@ -1,51 +1,65 @@
 import { PTNode } from "./PTNode";
-import { getRefinerFunction } from "./utils";
-import { SUPPRESS } from "../parsing-expression/constants";
-import { ParsingExpression } from "../parsing-expression/basic/ParsingExpression";
-import { Match, SyntaxPredicate } from "../parsing-expression";
+import {
+  Choice,
+  Expression,
+  Match,
+  Optional,
+  SyntaxPredicate,
+} from "../parsing-expression";
+import { Node } from "./types";
+import { NonTerminal } from "./NonTerminal";
 
 export class Terminal extends PTNode {
   constructor(
     rule: Match | SyntaxPredicate,
-    public value: string,
+    public rawValue: string,
     range: [number, number],
-    _ruleName?: string,
     pres: {
       ws?: string;
-      comments?: PTNode[];
+      comments?: Node[];
     } = {},
   ) {
-    super(rule, range, _ruleName, pres);
+    super(rule, range, pres);
   }
 
   get desc() {
-    return this.value
-      ? `${this.ruleName} '${this.value}' [${this.start}:${this.end}]`
+    return this.rawValue
+      ? `${this.rule.name} '${this.rawValue}' [${this.start}:${this.end}]`
       : this.name;
   }
 
-  get flatStr(): string {
+  get value(): string {
+    if (this.rule.refiner) {
+      return this.rule.refiner(this, this.rawValue);
+    }
+
+    return this.rawValue;
+  }
+
+  flatStr(preserveComments: boolean = true): string {
     return (
       this._originalCode ??
-      this.commentsBefore.map((c) => c.flatStr).join() +
+      this.commentsBefore
+        .map((c) => (preserveComments ? c.flatStr(true) : c.wsBefore))
+        .join() +
         this.wsBefore +
-        this.value
+        this.rawValue
     );
   }
 
-  treeStr(includeSuppressed: boolean = false, indent = 0) {
-    return `${super.treeStr(includeSuppressed, indent)}: "${this.value}"`;
+  treeStr(includeSuppressed: boolean = false, indent = 0): string {
+    return `${super.treeStr(includeSuppressed, indent)}: "${this.rawValue}"`;
   }
 
   hasContent(): boolean {
-    return this.value !== "";
+    return this.rawValue !== "";
   }
 
   toJSON() {
     return {
       start: this.start,
       end: this.end,
-      value: this.value,
+      rawValue: this.rawValue,
     };
   }
 }

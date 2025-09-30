@@ -1,19 +1,18 @@
 import { GrammarDef } from "../../types";
-import { PEOptions } from "../types";
+import { PEOptions, VisitorFn } from "../types";
 import {
   CommentsParser,
   Parser,
   StringManipulation,
   WhitespaceSkipper,
 } from "../../parser";
-import type { PTNode } from "../../parse-tree";
-import { NonTerminal } from "../../parse-tree";
+import { Node, NonTerminal } from "../../parse-tree";
 import { NoMatch } from "../../errors";
 import { IGNORE, withProps } from "prop-scope";
 
 export abstract class ParsingExpression {
   ruleName: string;
-  refiner?: (node: PTNode) => any;
+  refiner?: VisitorFn;
   suppress: boolean;
 
   constructor(
@@ -33,7 +32,7 @@ export abstract class ParsingExpression {
     return this._ruleName;
   }
 
-  parse(parser: Parser): PTNode {
+  parse(parser: Parser): Node {
     const c_pos = parser.position;
 
     if (!parser.in_match) {
@@ -104,7 +103,7 @@ export abstract class ParsingExpression {
     return result;
   }
 
-  _doParsing(parser: Parser): PTNode {
+  _doParsing(parser: Parser): Node {
     const init_pos = parser.position;
     const comments = CommentsParser.parseComments(parser);
     const whitespaces = WhitespaceSkipper.skipWhitespaces(parser);
@@ -151,5 +150,5 @@ export abstract class ParsingExpression {
     return result;
   }
 
-  abstract _parse(parser: Parser): PTNode | PTNode[] | null;
+  abstract _parse(parser: Parser): Node | Node[] | null;
 }

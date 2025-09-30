@@ -2,7 +2,7 @@ import { Sequence } from "./Sequence";
 import { GrammarDef } from "../../types";
 import { ParseManyOptions } from "../types";
 import { Parser } from "../../parser";
-import type { PTNode } from "../../parse-tree";
+import type { Node } from "../../parse-tree";
 import { NoMatch } from "../../errors";
 
 export class Partial extends Sequence {
@@ -10,8 +10,8 @@ export class Partial extends Sequence {
     super(elements, options);
   }
 
-  _parse(parser: Parser): PTNode[] {
-    const results: PTNode[] = [];
+  _parse(parser: Parser): Node[] {
+    const results: Node[] = [];
     let c_pos: number;
     const sep = this.options.sep ? parser.getRule(this.options.sep) : null;
     for (const element of this.elements) {

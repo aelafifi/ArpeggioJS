@@ -1,6 +1,6 @@
 import { MatchOptions } from "../index";
 import { Parser } from "../../parser";
-import { PTNode } from "../../parse-tree";
+import type { Node } from "../../parse-tree";
 import { withProps } from "prop-scope";
 import { ParsingExpression } from "../basic/ParsingExpression";
 
@@ -23,7 +23,7 @@ export abstract class Match extends ParsingExpression {
     return `${prefix}${this.constructor.name}(${this.pattern})`;
   }
 
-  parse(parser: Parser): PTNode {
+  parse(parser: Parser): Node {
     return withProps(parser, { in_match: true }, () => super.parse(parser));
   }
 }

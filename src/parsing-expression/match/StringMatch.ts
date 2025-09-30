@@ -1,5 +1,5 @@
 import { Parser } from "../../parser";
-import { PTNode, Terminal } from "../../parse-tree";
+import { Node, Terminal } from "../../parse-tree";
 
 import { Match } from "./Match";
 import { MatchOptions } from "../types";
@@ -15,7 +15,7 @@ export class StringMatch extends Match {
     super(pattern, options);
   }
 
-  _parse(parser: Parser): PTNode {
+  _parse(parser: Parser): Node {
     const c_pos = parser.position;
     const ignoreCase = this.ignoreCase ?? parser.ignoreCase;
 

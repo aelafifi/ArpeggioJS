@@ -1,6 +1,6 @@
 import { ParsingExpression } from "./ParsingExpression";
 import { GrammarDef } from "../../types";
-import { AutoReducedPEOptions } from "../types";
+import { PEOptions } from "../types";
 import { Parser } from "../../parser";
 
 /**
@@ -14,13 +14,12 @@ import { Parser } from "../../parser";
 export class Expression extends ParsingExpression {
   constructor(
     readonly element: GrammarDef,
-    readonly options: AutoReducedPEOptions = {},
+    readonly options: PEOptions = {},
   ) {
     super([element], options);
   }
 
   _parse(parser: Parser) {
-    // return autoReduce(parser, parser.getRule(this.element).parse(parser), this);
     return [parser.getRule(this.element).parse(parser)];
   }
 }

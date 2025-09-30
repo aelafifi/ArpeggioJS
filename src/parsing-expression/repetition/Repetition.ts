@@ -1,9 +1,9 @@
 import { ParseManyOptions } from "../index";
 import type { GrammarDef } from "../../types";
 import type { Parser } from "../../parser";
-import type { PTNode } from "../../parse-tree";
+import type { Node } from "../../parse-tree";
 import { NoMatch } from "../../errors";
-import { ParsingExpression } from "../basic/ParsingExpression";
+import { ParsingExpression } from "../basic";
 
 export class Repetition extends ParsingExpression {
   constructor(
@@ -22,8 +22,8 @@ export class Repetition extends ParsingExpression {
     super([element], options);
   }
 
-  _parse(parser: Parser): PTNode | PTNode[] | null {
-    const results: PTNode[] = [];
+  _parse(parser: Parser): Node | Node[] | null {
+    const results: Node[] = [];
     let c_pos = parser.position;
     const rule = parser.getRule(this.element);
     const sep = this.options.sep ? parser.getRule(this.options.sep) : null;

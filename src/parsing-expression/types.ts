@@ -1,10 +1,12 @@
 import { GrammarDef } from "../types";
-import { PTNode } from "../parse-tree";
+import { Node } from "../parse-tree";
+
+export type VisitorFn = (node: Node, value: any) => any;
 
 export interface PEOptions {
   ruleName?: string;
   suppress?: boolean;
-  refiner?: (node: PTNode) => any;
+  refiner?: VisitorFn;
 
   lex?: boolean;
   skipws?: string;
@@ -12,9 +14,10 @@ export interface PEOptions {
   ignoreCase?: boolean;
 }
 
-export type AutoReducedPEOptions = Omit<PEOptions, "refiner">;
+export interface WithSep {
+  sep?: GrammarDef;
+}
 
-// Shouldn't apply for classes with autoReduce=true
-export type ParseManyOptions = PEOptions & { sep?: GrammarDef };
+export type ParseManyOptions = PEOptions & WithSep;
 
 export type MatchOptions = Omit<PEOptions, "skipws" | "eolterm" | "lex">;

@@ -1,6 +1,6 @@
 import { Match } from "./Match";
 import { Parser } from "../../parser";
-import { PTNode, Terminal } from "../../parse-tree";
+import { Node, Terminal } from "../../parse-tree";
 
 class EndOfFile extends Match {
   constructor() {
@@ -10,7 +10,7 @@ class EndOfFile extends Match {
     });
   }
 
-  _parse(parser: Parser): PTNode {
+  _parse(parser: Parser): Node {
     if (parser.position === parser.input.length) {
       return new Terminal(this, "", [parser.position, parser.position]);
     }

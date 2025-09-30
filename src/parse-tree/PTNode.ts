@@ -9,14 +9,9 @@ export abstract class PTNode {
 
   _originalCode?: string;
 
-  __refiner?: (node: PTNode, value: any) => any;
-  __ruleName?: string;
-  __suppress?: boolean;
-
   constructor(
     rule: ParsingExpression,
     range: [number, number],
-    public _ruleName?: string,
     pres: {
       ws?: string;
       comments?: PTNode[];
@@ -29,17 +24,15 @@ export abstract class PTNode {
     this.commentsBefore = pres.comments ?? [];
   }
 
-  get ruleName() {
-    return this._ruleName ?? this.rule.ruleName;
-  }
-
   get name() {
     return `${this.rule.name} [${this.start}:${this.end}]`;
   }
 
+  abstract get value(): any;
+
   abstract get desc(): string;
 
-  abstract get flatStr(): string;
+  abstract flatStr(preserveComments: boolean): string;
 
   abstract hasContent(): boolean;
 

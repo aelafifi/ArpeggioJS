@@ -1,9 +1,9 @@
 import { ParsingExpression } from "./ParsingExpression";
 import { GrammarDef } from "../../types";
-import { AutoReducedPEOptions, PEOptions } from "../types";
+import { PEOptions } from "../types";
 import { Parser } from "../../parser";
 import { NoMatch } from "../../errors";
-import { PTNode } from "../../parse-tree";
+import type { Node } from "../../parse-tree";
 
 /**
  * **#auto_reducible**
@@ -15,7 +15,7 @@ export class Choice extends ParsingExpression {
 
   _parse(parser: Parser) {
     const c_pos = parser.position;
-    let emptyMatch: PTNode | undefined;
+    let emptyMatch: Node | undefined;
     for (const element of this.elements) {
       const node = parser.getRule(element);
       try {
