@@ -63,10 +63,12 @@ export class ParserContext {
     this.ignoreCase = parser.options.ignoreCase;
   }
 
-  parse(): Node {
+  parse(model?: GrammarDef): Node {
     let pt_node: Node;
     try {
-      pt_node = this.parser.getRule(this.parser.parseModel).parse(this);
+      pt_node = this.parser
+        .getRule(model ?? this.parser.parseModel)
+        .parse(this);
     } catch (e) {
       if (e instanceof NoMatch) {
         if (e.rules[0] === this.parser.FIRST_NOT) {
@@ -193,12 +195,12 @@ export class Parser {
   ruleCacheMisses: number = 0;
 
   constructor(
-    readonly parseModel: GrammarDef,
+    readonly parseModel: GrammarDef = null,
     readonly options: ParserOptions = {},
   ) {}
 
-  parse(input: string): Node {
-    return new ParserContext(this, input).parse();
+  parse(input: string, rule?: GrammarDef): Node {
+    return new ParserContext(this, input).parse(rule);
   }
 
   getRule(x: GrammarDef): ParsingExpression {
