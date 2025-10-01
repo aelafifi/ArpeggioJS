@@ -1,4 +1,4 @@
-import { ParsingExpression } from "../parsing-expression";
+import { ParsingExpression, VisitorFn } from "../parsing-expression";
 
 export abstract class PTNode {
   rule: ParsingExpression;
@@ -37,8 +37,12 @@ export abstract class PTNode {
   abstract hasContent(): boolean;
 
   treeStr(includeSuppressed: boolean = false, indent = 0) {
-    return `${"  ".repeat(indent)}${this.name}`;
+    return `${"  ".repeat(indent)}${this.name}${this.rule.suppress ? " ($)" : ""}`;
   }
 
   abstract toJSON(): any;
+
+  abstract visit(visitors: Record<string, VisitorFn>): any;
+
+  abstract get suppressed(): boolean;
 }

@@ -5,7 +5,9 @@ import {
   Match,
   Optional,
   ParsingExpression,
+  Sequence,
   SyntaxPredicate,
+  VisitorFn,
 } from "../parsing-expression";
 import { PTNode } from "./PTNode";
 
@@ -27,22 +29,22 @@ export class NonTerminal extends PTNode {
   }
 
   get _children(): null | Node | Node[] {
-    const children = this.children.filter((c) => !c.rule.suppress);
+    const children = this.children.filter((c) => !c.suppressed);
 
-    if (this.rule instanceof Choice || this.rule instanceof Expression) {
-      return children[0]?.value;
+    if (
+      this.rule instanceof Choice ||
+      this.rule instanceof Optional ||
+      this.rule instanceof Expression
+    ) {
+      return children[0]?.value ?? null;
     }
 
     if (children.length === 0) {
       return null;
     }
 
-    if (this.rule instanceof Optional) {
-      if (children.length > 0) {
-        return children[0]?.value;
-      }
-
-      return null;
+    if (children.length === 1 && this.rule instanceof Sequence) {
+      return children[0]?.value;
     }
 
     return children.map((c) => c.value);
@@ -85,5 +87,50 @@ export class NonTerminal extends PTNode {
       end: this.end,
       children: this.children,
     };
+  }
+
+  visit(visitors: Record<string, VisitorFn> = {}): any {
+    if (this.rule.refiner) {
+      return this.value;
+    }
+
+    const visitor =
+      visitors[this.rule.ruleName] ?? ((_node: Node, value: any) => value);
+
+    const childrenValues = this.children
+      .filter((c) => !c.suppressed)
+      .map((child) => child.visit(visitors));
+
+    if (
+      this.rule instanceof Choice ||
+      this.rule instanceof Optional ||
+      this.rule instanceof Optional ||
+      this.rule instanceof Expression
+    ) {
+      return visitor(this, childrenValues[0] ?? null);
+    }
+
+    if (childrenValues.length === 0) {
+      return visitor(this, null);
+    }
+
+    if (childrenValues.length === 1 && this.rule instanceof Sequence) {
+      return visitor(this, childrenValues[0]);
+    }
+
+    return visitor(this, childrenValues);
+  }
+
+  get suppressed(): boolean {
+    if (this.rule.suppress) {
+      return true;
+    }
+
+    const value = this.value;
+    if (value instanceof ParsingExpression && value.suppress) {
+      return true;
+    }
+
+    return false;
   }
 }

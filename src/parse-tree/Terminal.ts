@@ -1,13 +1,6 @@
 import { PTNode } from "./PTNode";
-import {
-  Choice,
-  Expression,
-  Match,
-  Optional,
-  SyntaxPredicate,
-} from "../parsing-expression";
+import { Match, SyntaxPredicate, VisitorFn } from "../parsing-expression";
 import { Node } from "./types";
-import { NonTerminal } from "./NonTerminal";
 
 export class Terminal extends PTNode {
   constructor(
@@ -61,5 +54,20 @@ export class Terminal extends PTNode {
       end: this.end,
       rawValue: this.rawValue,
     };
+  }
+
+  visit(visitors: Record<string, VisitorFn> = {}): any {
+    if (this.rule.refiner) {
+      return this.value;
+    }
+
+    const visitor =
+      visitors[this.rule.ruleName] ?? ((_node: Node, value: any) => value);
+
+    return visitor(this, this.value);
+  }
+
+  get suppressed(): boolean {
+    return this.rule.suppress;
   }
 }
