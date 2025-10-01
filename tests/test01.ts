@@ -62,32 +62,8 @@ let pTree = parser.parse(input);
 // console.log(pTree.treeStr());
 // console.log(pTree.flatStr === input);
 
-function bottomUpWalk(
-  node: Node,
-  visitors: Record<string, Function> = {},
-): any {
-  if (node.rule.refiner) {
-    return node.value;
-  }
-
-  const visitor =
-    visitors[node.rule.name] ??
-    (node instanceof NonTerminal
-      ? (_node: Node, _: any) => (node as NonTerminal)._children
-      : (node: Node, value: any) => value);
-
-  if (node instanceof NonTerminal) {
-    const childrenValues = node.children
-      .filter((c) => !c.rule.suppress)
-      .map((child) => bottomUpWalk(child, visitors));
-    return visitor(node, childrenValues);
-  }
-
-  return visitor(node, node.value);
-}
-
 console.log(
-  bottomUpWalk(pTree, {
+  pTree.visit({
     _program: (node: any, value: any) => JSON.stringify(value),
   }),
 );
