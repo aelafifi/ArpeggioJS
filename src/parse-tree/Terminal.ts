@@ -1,6 +1,7 @@
 import { PTNode } from "./PTNode";
 import { Match, SyntaxPredicate, VisitorFn } from "../parsing-expression";
 import { Node } from "./types";
+import { cachedProperty } from "./utils";
 
 export class Terminal extends PTNode {
   constructor(
@@ -21,6 +22,7 @@ export class Terminal extends PTNode {
       : this.name;
   }
 
+  @cachedProperty
   get value(): string {
     if (this.rule.refiner) {
       return this.rule.refiner(this, this.rawValue);
@@ -50,6 +52,10 @@ export class Terminal extends PTNode {
 
   toJSON() {
     return {
+      kind: "Terminal",
+      desc: this.desc,
+      ruleName: this.rule.ruleName,
+      ruleType: this.rule.constructor.name,
       start: this.start,
       end: this.end,
       rawValue: this.rawValue,

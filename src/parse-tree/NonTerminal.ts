@@ -10,6 +10,7 @@ import {
   VisitorFn,
 } from "../parsing-expression";
 import { PTNode } from "./PTNode";
+import { cachedProperty } from "./utils";
 
 export class NonTerminal extends PTNode {
   constructor(
@@ -28,6 +29,7 @@ export class NonTerminal extends PTNode {
     return this.name;
   }
 
+  @cachedProperty
   get _children(): null | Node | Node[] {
     const children = this.children.filter((c) => !c.suppressed);
 
@@ -50,12 +52,23 @@ export class NonTerminal extends PTNode {
     return children.map((c) => c.value);
   }
 
+  @cachedProperty
   get value(): any {
-    if (this.rule.refiner) {
-      return this.rule.refiner(this, this._children);
+    const children = this._children;
+    return this.rule.refiner ? this.rule.refiner(this, children) : children;
+  }
+
+  get suppressed(): boolean {
+    if (this.rule.suppress) {
+      return true;
     }
 
-    return this._children;
+    const value = this.value;
+    if (value instanceof ParsingExpression && value.suppress) {
+      return true;
+    }
+
+    return false;
   }
 
   flatStr(preserveComments: boolean = true): string {
@@ -83,6 +96,10 @@ export class NonTerminal extends PTNode {
 
   toJSON() {
     return {
+      kind: "NonTerminal",
+      desc: this.desc,
+      ruleName: this.rule.ruleName,
+      ruleType: this.rule.constructor.name,
       start: this.start,
       end: this.end,
       children: this.children,
@@ -119,18 +136,5 @@ export class NonTerminal extends PTNode {
     }
 
     return visitor(this, childrenValues);
-  }
-
-  get suppressed(): boolean {
-    if (this.rule.suppress) {
-      return true;
-    }
-
-    const value = this.value;
-    if (value instanceof ParsingExpression && value.suppress) {
-      return true;
-    }
-
-    return false;
   }
 }
