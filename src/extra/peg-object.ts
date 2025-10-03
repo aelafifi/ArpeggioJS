@@ -45,7 +45,7 @@ const repRange = [
   match$("}"),
 ];
 
-// TODO: Support `Partial` and `Repetition` types in PEGObject
+// TODO: Support `Partial` and `UnorderedGroup` types in PEGObject
 const FullExpression = () =>
   sequence(
     [
@@ -68,6 +68,7 @@ const _expression = () =>
     regex,
     str_match,
     keyword_match,
+    // TODO: allow `sequence` with `sep`
     sequence([match$("("), _choice, match$(")")], { skipws: DEFAULT_WS }),
   ]);
 
